@@ -1,0 +1,282 @@
+{
+  "name": "Weather Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6216d667-5564-454c-9947-bc27ba3de28e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        140,
+        -180
+      ],
+      "id": "3d2d4cae-cf6c-422e-ab9a-dc7729068b28",
+      "name": "Webhook",
+      "webhookId": "6216d667-5564-454c-9947-bc27ba3de28e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text }}",
+        "options": {
+          "systemMessage": "You are a weather assistant who can answer weather questions in a given location. Do not make up information. Do not answer questions about anything unrelated to weather reports. Do not offer to do anything else than weather questions. When you determine the forecast, suggest a fun activity to do outside based on the weather conditions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        680,
+        -180
+      ],
+      "id": "d1294327-9ea0-4447-84dd-5c426b0e8ad8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-3-7-sonnet-20250219",
+          "cachedResultName": "Claude 3.7 Sonnet"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        500,
+        60
+      ],
+      "id": "b2f7c114-aada-4b57-a97d-58f7da808a64",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "FwstDHrefwWWqTWa",
+          "name": "Anthropic (env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.thread_ts }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        660,
+        180
+      ],
+      "id": "eaf92b3d-cdef-4c05-9d51-45fda35b79b8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Gets the latitude and longitude coordinates of a given city name",
+        "url": "https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "name"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        40
+      ],
+      "id": "39ea8c65-63ee-4c87-86af-d1b18834b803",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get the current weather for given latitude and longitude coordinates",
+        "url": "https://api.open-meteo.com/v1/forecast?current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "latitude"
+            },
+            {
+              "name": "longitude"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        40
+      ],
+      "id": "033943a1-c722-43f1-896d-4edf6ee63316",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Webhook').item.json.body.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Webhook').item.json.body.thread_ts }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1140,
+        -180
+      ],
+      "id": "2a71f456-8cb4-4c36-9875-6a452855418d",
+      "name": "Slack",
+      "webhookId": "e9c22492-25d0-414b-b337-ab0285f19e12",
+      "credentials": {
+        "slackApi": {
+          "id": "YOtJR0hvXyqT9DDR",
+          "name": "Slack (env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ef0cac5-673d-4799-b7f1-6f6202993678",
+              "leftValue": "={{ $json.body.text }}",
+              "rightValue": "n8n",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        -180
+      ],
+      "id": "57dab0ed-bbad-4300-a7ab-d036198b1e3f",
+      "name": "Ignore Yourself"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Ignore Yourself",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Yourself": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "82a3040e-92b1-4451-8381-9985f102c4ce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe03be4d21dcc6ccf0c10802bed3803ada265411d0d52a4e3af26c65120cf5f7"
+  },
+  "id": "IUdjd8efXtcfVR4u",
+  "tags": []
+}
