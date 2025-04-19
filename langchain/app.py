@@ -142,6 +142,10 @@ workflow.add_edge("send_to_slack", END)
 
 graph = workflow.compile()
 
+# Print the ASCII representation of the graph
+print("\nLangGraph Weather Agent Workflow:")
+print(graph.get_graph().draw_ascii())
+
 @slack_app.event("message")
 def handle_message(body):
     """Process incoming Slack messages with conversation history."""

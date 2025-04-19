@@ -63,6 +63,28 @@ This implementation uses:
 
 ```
 User in Slack → Slack Bot → LangGraph Workflow → Claude 3.5 → Weather API → Response back to Slack
+
+            +-----------+                
+            | __start__ |                
+            +-----------+                
+                  *                      
+                  *                      
+                  *                      
+              +-------+                  
+              | agent |                  
+              +-------+                  
+           ***         ...               
+          *               .              
+        **                 ..            
++-----------+         +---------------+  
+| tool_node |         | send_to_slack |  
++-----------+         +---------------+  
+                              *          
+                              *          
+                              *          
+                         +---------+     
+                         | __end__ |     
+                         +---------+     
 ```
 
 ## Example
