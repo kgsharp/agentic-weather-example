@@ -56,6 +56,8 @@ This implementation uses n8n, a workflow automation platform, to orchestrate the
 
 - Set up Slack
 
+You need a slack bot created and added to a chat room. This is supported on the free version of slack.
+
 1. Create a new Slack app using the provided manifest in `slack/slack-manifest.json`
 2. Install the app to your workspace
 3. Create an app token with `connections:write` permissions
